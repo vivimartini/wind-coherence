@@ -1,0 +1,22 @@
+# Pinned by the Milestone 1 installer after resolution. The job records pip freeze.
+# colabtools is an upstream extra used by the notebook UI and is not installed.
+jax[cuda12]
+dm-haiku
+chex
+dm-tree
+jraph
+fiddle
+numpy
+pandas
+scipy
+pyproj
+h5netcdf
+netCDF4
+rtree
+trimesh
+typing_extensions
+absl-py
+dinosaur-dycore
+xarray-tensorstore
+xarray<=2026.2.0
+gdm-xarray-jax @ git+https://github.com/google-deepmind/xarray_jax.git@v0.1.1

@@ -1,0 +1,18 @@
+farm,name,type,lat,lon,capacity_mw,registered_capacity_mw,repd_capacity_mw,tip_height_m,hub_height_m,hub_height_source,bmunits
+beatrice,Beatrice,offshore,58.0882,-2.9502,681.5260000000001,681.5260000000001,588.0,,100.0,default offshore,T_BEATO-1 T_BEATO-2 T_BEATO-3 T_BEATO-4
+hornsea1,Hornsea 1,offshore,53.6815,1.4207,1200.0,1200.0,1218.0,,100.0,default offshore,T_HOWAO-1 T_HOWAO-2 T_HOWAO-3
+london_array,London Array,offshore,51.6217,1.4958,704.0989999999999,704.0989999999999,630.0,,100.0,default offshore,T_LARYW-1 T_LARYW-2 T_LARYW-3 T_LARYW-4
+walney_ext,Walney Extension,offshore,54.09,-3.74,660.0,660.0,659.0,222.0,137.6,0.62 x REPD tip height,T_WLNYO-3 T_WLNYO-4
+dudgeon,Dudgeon,offshore,53.1175,0.6135,402.0,402.0,402.0,,100.0,default offshore,T_DDGNO-1 T_DDGNO-2 T_DDGNO-3 T_DDGNO-4
+east_anglia_one,East Anglia One,offshore,52.137,2.1728,725.0,725.0,714.0,,100.0,default offshore,T_EAAO-1 T_EAAO-2
+gwynt_y_mor,Gwynt y Môr,offshore,53.454,-3.6266,592.0,592.0,576.0,,100.0,default offshore,T_GYMR-15 T_GYMR-17 T_GYMR-26 T_GYMR-28
+greater_gabbard,Greater Gabbard,offshore,51.9176,1.9284,539.0,539.0,504.0,,100.0,default offshore,T_GRGBW-1 T_GRGBW-2 T_GRGBW-3
+race_bank,Race Bank,offshore,53.136,0.5892,574.0,574.0,573.3,154.0,95.5,0.62 x REPD tip height,T_RCBKO-1 T_RCBKO-2
+rampion,Rampion,offshore,50.64,-0.18,400.2,400.2,400.0,140.0,86.8,0.62 x REPD tip height,T_RMPNO-1 T_RMPNO-2
+whitelee,Whitelee,onshore,55.6812,-4.2791,309.0,309.0,322.0,,80.0,default onshore,T_WHILW-1
+clyde,Clyde,onshore,55.4623,-3.5444,550.0,550.0,522.8,,80.0,default onshore,T_CLDCW-1 T_CLDNW-1 T_CLDSW-1
+stronelairg,Stronelairg,onshore,57.1269,-4.5264,324.0,324.0,227.7,135.0,83.7,0.62 x REPD tip height,T_STLGW-1 T_STLGW-2 T_STLGW-3
+kilgallioch,Kilgallioch,onshore,54.9885,-4.8017,228.0,228.0,239.0,,80.0,default onshore,T_KLGLW-1
+griffin,Griffin,onshore,56.5812,-3.7338,206.0,206.0,156.0,,80.0,default onshore,T_GRIFW-1 T_GRIFW-2
+dorenell,Dorenell,onshore,57.3509,-3.1317,228.0,228.0,177.0,126.0,78.1,0.62 x REPD tip height,T_DOREW-1 T_DOREW-2
+pen_y_cymoedd,Pen y Cymoedd,onshore,51.6555,-3.6957,228.0,228.0,228.0,,80.0,default onshore,T_PNYCW-1

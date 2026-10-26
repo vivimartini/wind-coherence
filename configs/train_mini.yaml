@@ -1,0 +1,16 @@
+# Measured configuration for the first WeatherNext training steps.
+# These numbers come from Slurm job 36472459 on one A100-SXM4-80GB.
+# They are limits, not a claim that a power-forecast model has been trained.
+checkpoint: WeatherNextCyclones_Mini_<2024
+code: weathernext v0.3.0 89c4b2a77a1c57b328b909c575550fd2e5aadc9c
+training_cutoff: through 2023
+resolution_deg: 1.0
+wind_height_m: 10
+members: 2
+rollout_steps: 7
+rematerialise_rollout: true
+trainable:
+  - grid_decoder
+  - global_norm_conditioning_encoder
+gpu: NVIDIA A100-SXM4-80GB
+fits_four_members: false

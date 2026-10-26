@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.DS_Store
+cdk.out/
+
+# Data and results live on RDS, not in git. The farm list is the exception:
+# the live image is built from it.
+data/*
+!data/interim/
+data/interim/*
+!data/interim/portfolio.csv
+data_synthetic/
+results/

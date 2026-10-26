@@ -1,0 +1,107 @@
+# Candidate portfolio. Every BM unit ID below was checked against the Elexon
+# reference (/reference/bmunits/all) and every REPD Ref ID against the Q2 2026
+# REPD extract on 25 Sep 2026. All farms were operational by mid 2020, so the
+# metered history behind the dependence template spans several years.
+#
+# Coordinates and tip height come from REPD, capacity from the BM unit
+# reference. `python -m gbwind portfolio build` resolves them, and
+# `python -m gbwind portfolio select` applies the metering reliability rule.
+# Set hub_height_m on a farm to override the DESIGN.md approximation.
+
+farms:
+  # Offshore
+  - id: beatrice
+    name: Beatrice
+    type: offshore
+    repd_refs: [2521]
+    bmunits: [T_BEATO-1, T_BEATO-2, T_BEATO-3, T_BEATO-4]
+  - id: hornsea1
+    name: Hornsea 1
+    type: offshore
+    repd_refs: [2525]
+    bmunits: [T_HOWAO-1, T_HOWAO-2, T_HOWAO-3]
+  - id: london_array
+    name: London Array
+    type: offshore
+    repd_refs: [2511]
+    bmunits: [T_LARYW-1, T_LARYW-2, T_LARYW-3, T_LARYW-4]
+  - id: walney_ext
+    name: Walney Extension
+    type: offshore
+    repd_refs: [2533]
+    bmunits: [T_WLNYO-3, T_WLNYO-4]
+  - id: dudgeon
+    name: Dudgeon
+    type: offshore
+    repd_refs: [2538]
+    bmunits: [T_DDGNO-1, T_DDGNO-2, T_DDGNO-3, T_DDGNO-4]
+  - id: east_anglia_one
+    name: East Anglia One
+    type: offshore
+    repd_refs: [2524]
+    bmunits: [T_EAAO-1, T_EAAO-2]
+  - id: gwynt_y_mor
+    name: Gwynt y Môr
+    type: offshore
+    repd_refs: [2543]
+    bmunits: [T_GYMR-15, T_GYMR-17, T_GYMR-26, T_GYMR-28]
+  - id: greater_gabbard
+    name: Greater Gabbard
+    type: offshore
+    repd_refs: [2510]
+    bmunits: [T_GRGBW-1, T_GRGBW-2, T_GRGBW-3]
+  - id: race_bank
+    name: Race Bank
+    type: offshore
+    repd_refs: [2515, 6501]
+    bmunits: [T_RCBKO-1, T_RCBKO-2]
+  - id: rampion
+    name: Rampion
+    type: offshore
+    repd_refs: [2520]
+    bmunits: [T_RMPNO-1, T_RMPNO-2]
+
+  # Onshore
+  - id: whitelee
+    name: Whitelee
+    type: onshore
+    repd_refs: [3489]
+    bmunits: [T_WHILW-1]
+  - id: clyde
+    name: Clyde
+    type: onshore
+    repd_refs: [4011, 4178]
+    bmunits: [T_CLDCW-1, T_CLDNW-1, T_CLDSW-1]
+  - id: stronelairg
+    name: Stronelairg
+    type: onshore
+    repd_refs: [4597]
+    bmunits: [T_STLGW-1, T_STLGW-2, T_STLGW-3]
+  # T_KLGLW-2 is an extension metered only from October 2025. The farm is the
+  # original unit so that its definition is constant over the template history.
+  - id: kilgallioch
+    name: Kilgallioch
+    type: onshore
+    repd_refs: [4386]
+    bmunits: [T_KLGLW-1]
+  - id: griffin
+    name: Griffin
+    type: onshore
+    repd_refs: [4028]
+    bmunits: [T_GRIFW-1, T_GRIFW-2]
+  - id: dorenell
+    name: Dorenell
+    type: onshore
+    repd_refs: [4244]
+    bmunits: [T_DOREW-1, T_DOREW-2]
+  - id: pen_y_cymoedd
+    name: Pen y Cymoedd
+    type: onshore
+    repd_refs: [4595]
+    bmunits: [T_PNYCW-1]
+
+# Selection rule, fixed before any forecast is scored. A farm is kept if, over
+# the metered history, at least this fraction of settlement periods is metered
+# at every one of its BM units.
+selection:
+  min_metered_fraction: 0.95
