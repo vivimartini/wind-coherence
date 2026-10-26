@@ -96,8 +96,11 @@ class LiveStack(Stack):
                     assign_public_ip=True,
                 )
             )
-        schedule("EverySixHoursAifs", ingest_aifs, "rate(6 hours)")
-        schedule("EverySixHoursIfs", ingest_ifs, "rate(6 hours)")
+        # dynamical.org commits each AIFS ENS cycle about 8 h after its nominal time
+        # (00 UTC by 08:20), and only the 00 UTC IFS ENS run, by about 08:40. Runs fire
+        # 30 minutes later; a late cycle is caught by the next run's two-day lookback.
+        schedule("AifsAfterEachCycle", ingest_aifs, "cron(50 2/6 * * ? *)")
+        schedule("IfsDaily", ingest_ifs, "cron(10 9 * * ? *)")
         schedule("DailyScore", score, "cron(30 6 * * ? *)")
 
         failed = events.Rule(

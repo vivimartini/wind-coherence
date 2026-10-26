@@ -45,7 +45,7 @@ def _cmd_live(a) -> int:
     import os
 
     from gbwind import archive
-    from gbwind.live import cycle_key, due_cycle, publish_frame, resolve_store
+    from gbwind.live import ingest_pending, resolve_store
 
     url = a.archive or os.environ.get("GBWIND_ARCHIVE")
     store = resolve_store(url, DEFAULT_PATHS.data / "live")
@@ -56,13 +56,17 @@ def _cmd_live(a) -> int:
         print('{"event": "ingest", "status": "missing_portfolio"}')
         return 1
     farms = pd.read_csv(DEFAULT_PATHS.portfolio_csv)
-    cycle = pd.Timestamp(a.cycle) if a.cycle else due_cycle(pd.Timestamp.now("UTC"))
-    day = cycle.strftime("%Y-%m-%d")
-    archive.extract(a.source, day, day, farms, DEFAULT_PATHS)
-    ds = archive.load_forecasts(a.source, DEFAULT_PATHS).sel(init_time=cycle.to_datetime64())
-    frame = ds.to_dataframe().reset_index()
-    status = publish_frame(store, a.source, cycle, frame)
-    print(f'{{"event": "ingest", "status": "{status}", "key": "{cycle_key(a.source, cycle)}"}}')
+    leads = config.LEAD_HOURS_IFS_SENSITIVITY if a.source == "ifs-ens" else config.LEAD_HOURS_PRIMARY
+    ds = archive.open_system(a.source)
+    available = [pd.Timestamp(a.cycle)] if a.cycle else pd.DatetimeIndex(ds["init_time"].values)
+    now = pd.Timestamp(a.cycle) if a.cycle else pd.Timestamp.now("UTC")
+
+    def extract(cycle):
+        piece = archive.extract_init(ds, cycle, leads, farms)
+        return None if piece is None else piece.to_dataframe().reset_index()
+
+    for event in ingest_pending(store, a.source, available, extract, now):
+        print(json.dumps(event), flush=True)
     return 0
 
 
@@ -91,7 +95,8 @@ def main(argv: list[str] | None = None) -> int:
     ing.add_argument(
         "--cycle",
         default=None,
-        help="initialisation time, for example 2026-07-01T00; default is the latest published 6-hourly cycle",
+        help="one initialisation time, for example 2026-07-01T00; default is every cycle the source "
+        "published in the last two days that the archive does not hold yet",
     )
     ing.add_argument("--archive", default=None, help="local directory or s3://bucket/prefix")
     score = live_sub.add_parser("score", help="score settled cycles")

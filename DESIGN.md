@@ -538,6 +538,21 @@ Job 39194625 asked for one GPU and was given one A100-SXM4-80GB. On that device,
 
 Job 39248120, 26 October, AIFS ENS v2 on one A100-SXM4-80GB: one member, one 6 hour step, inference only, initialised from ECMWF open data `enfo` perturbed member 1 at 2026-10-26 06 UTC. Peak 21,883 MiB allocated by PyTorch, 24,381 MiB seen by the GPU. The output has 120 fields on the 542,080 point N320 grid, including 10 m and 100 m wind. Without gradients this is a lower bound and does not settle the model choice. The deciding number is a forward and backward pass with the CRPS loss over at least two members. The checkpoint's training config sets `num_gpus_per_ensemble` to 2.
 
+Training memory, jobs 39256505, 39258338 and 39259276, 26 October, one A100-SXM4-80GB each. One AdamW step: a rollout with gradients, 100 m wind at the 17 farm nodes through a smooth power curve, CRPS of the portfolio total, backward. Activation checkpointing per processor block (16 chunks), bf16 autocast. Inputs are random in normalised space with the real shapes, so these are memory and time, not skill. Seconds per step are the steady-state iteration after warm-up.
+
+| Run | Members on the GPU | 6 h steps | Lead | Peak allocated | Seconds per step |
+| --- | --- | --- | --- | --- | --- |
+| a | 2 | 1 | 6 h | 55,197 MiB | 7.5 |
+| b | 2 | 2 | 12 h | 65,813 MiB | 15.1 |
+| c | 2 | 4 | 24 h | out of memory at 80 GB | |
+| e | 1 | 1 | 6 h | 29,673 MiB | 3.7 |
+| f | 1 | 4 | 24 h | 43,191 MiB | 15.0 |
+| g | 1 | 7 | 42 h | 55,505 MiB | 26.3 |
+
+Each extra step costs about 4.3 GB per member, and time is linear in steps. Two members on one device cannot reach 24 hours; one member reaches 42 hours with 24 GB to spare.
+
+**Decision: AIFS ENS, one member per GPU.** An ensemble of M members trains on M GPUs, the layout the checkpoint itself was trained with (`num_gpus_per_ensemble` 2, `ensemble_size_per_device` 1). The CRPS needs every member's portfolio total, so the one cross-device exchange is an all-gather of 17 farm values per member per step, negligible beside the model. That exchange and the two-GPU step time are not yet measured; a two-GPU run of configuration g is the next job. At 26.3 seconds per step per GPU, one two-member optimiser step at 42 hours costs about 53 GPU-seconds, so the 288 GPU hours reserved for arms C and D buy about 19,500 such steps before any data-loading overhead. WeatherNext Mini stays the fallback if the two-GPU run fails.
+
 ---
 
 ## Amendments

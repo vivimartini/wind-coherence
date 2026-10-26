@@ -25,7 +25,14 @@ ROOT = Path(os.environ.get("WN_ROOT", "/rds/user/vm481/hpc-work/wind-coherence")
 REPO = Path(__file__).resolve().parents[1]
 OUT = ROOT / "results" / "aifs-probe"
 CKPT = ROOT / "data" / "aifs" / "aifs-ens-crps-2.0.ckpt"
-RUNS = [("a", 2, 1), ("b", 2, 2), ("c", 2, 4), ("d", 2, 7)]
+# PROBE_RUNS overrides the list, for example "e:1:1+f:1:4+g:1:7" (name:members:steps).
+# The separator is + because sbatch --export splits its value on commas.
+RUNS = [
+    (name, int(members), int(steps))
+    for name, members, steps in (
+        item.split(":") for item in os.environ.get("PROBE_RUNS", "a:2:1+b:2:2+c:2:4+d:2:7").split("+")
+    )
+]
 CHUNKS = int(os.environ.get("PROBE_CHUNKS", "16"))
 ITERATIONS = 3
 
@@ -67,6 +74,9 @@ def stats_for(model, name: str) -> tuple[float, float]:
 def fair_crps(members, target):
     m = members.shape[0]
     skill = (members - target).abs().mean()
+    if m == 1:
+        # One member per GPU: the spread term needs the other device's member.
+        return skill
     spread = (members[:, None] - members[None, :]).abs().sum() / (2 * m * (m - 1))
     return skill - spread
 
