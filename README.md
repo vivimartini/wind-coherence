@@ -8,7 +8,7 @@ Each farm keeps its 51 forecast values. Only the pairing across farms changes. P
 
 Seventeen farms, metered from September 2020, all still selected. Curves are in `config/power_curves.json`: ERA5 100 m wind, bilinear from the four surrounding 0.25° points, fit on uncurtailed hours before 2 July 2025. On the development dates the median absolute error is 10.2% of capacity. Hornsea 1 is 24%. Most of that is 3–21 June 2026, when the farm metered about zero and the curtailment flag missed it. It stays in.
 
-AIFS ENS v2, one member per GPU. A 42 h step fits on one 80 GB A100 (55.5 GB, 26 s/step). The two-GPU step has not been timed. No development score and no sealed score. The live stack is in `infra/` and has not been deployed from this machine.
+AIFS ENS v2, one member per GPU. A 42 h step fits on one 80 GB A100 (55.5 GB, 26 s/step). The two-GPU step has not been timed. No development score and no sealed score. The live stack in `infra/` is deployed.
 
 Hypothesis, rules, and the dated change log: [DESIGN.md](DESIGN.md). WeatherNext Mini memory: [docs/m1_feasibility.md](docs/m1_feasibility.md).
 
