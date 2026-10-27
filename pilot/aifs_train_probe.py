@@ -1,17 +1,4 @@
-"""Training memory probe for AIFS ENS v2 on one GPU.
-
-One optimiser step per configuration: a rollout of K six-hour steps for M
-members with gradients, 100 m wind at the farm grid points through a smooth
-power curve, the fair CRPS of the portfolio total, backward, AdamW. Activation
-checkpointing is per processor block (16 chunks for 16 layers) and the forward
-runs under bf16 autocast, as in the checkpoint's bf16-mixed training.
-
-Inputs are random in normalised space with the real shapes. Memory and time do
-not depend on the values; skill is not measured here.
-
-Configurations are run in order and stop at the first out-of-memory, so a
-later run is never attempted on a fragmented allocator.
-"""
+"""One AdamW step of AIFS ENS v2, through 100 m wind and a portfolio CRPS. Records memory against rollout length. Stops at the first out-of-memory."""
 
 from __future__ import annotations
 
@@ -55,7 +42,7 @@ def farm_nodes(model, torch):
     coords = model.graph_data["data"].x.detach().cpu().numpy()
     lat, lon = coords[:, 0], coords[:, 1]
     out = []
-    for flat, flon in zip(np.deg2rad(farms["lat"]), np.deg2rad(farms["lon"])):
+    for flat, flon in zip(np.deg2rad(farms["lat"]), np.deg2rad(farms["lon"]), strict=True):
         cosd = np.sin(lat) * np.sin(flat) + np.cos(lat) * np.cos(flat) * np.cos(lon - flon)
         out.append(int(np.argmax(cosd)))
     capacity = torch.tensor(farms["capacity_mw"].to_numpy(), dtype=torch.float32)

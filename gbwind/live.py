@@ -1,14 +1,4 @@
-"""One cycle in, one object out.
-
-The scheduled task and a backfill call this same function. The object key is
-the cycle, so running it twice does not create a second copy.
-
-Which cycles to ingest comes from the source archive, not the clock: the
-archive publishes each cycle hours after its nominal time, and a run that
-fires early or is missed must not lose a cycle. Each run therefore archives
-every cycle the source holds from the lookback window that is not already in
-the store, oldest first, and "no new cycle" is a normal outcome.
-"""
+"""Archive whatever cycles the source actually has. The object key is the cycle, so a rerun writes nothing new."""
 
 from __future__ import annotations
 

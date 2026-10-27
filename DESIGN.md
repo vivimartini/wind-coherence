@@ -1,17 +1,10 @@
 # When do wind farms underproduce together?
 
-### Dependence, not marginals. Testing AI weather ensembles against real generation.
+**Does the dependence structure of an operational ensemble, as distinct from its marginal forecasts, limit portfolio-level wind power prediction in Great Britain?**
 
-**Does the dependence structure of an operational ensemble, as distinct from its
-marginal forecasts, limit portfolio level wind power prediction in Great Britain?**
+A spread-out portfolio is worth something because the farms do not all produce badly at once. The question is whether the forecast has that right. Underproduce together means low generation at the same time. It does not mean turbines breaking.
 
-A geographically spread portfolio is valuable partly because its farms need not
-all produce badly at the same time. This project asks whether the forecast
-represents that behaviour correctly. Underproduce together means simultaneous low
-generation, not equipment failure.
-
-**The central question is now fixed and will not change again.** Amendments below
-may narrow execution. They will not move the question.
+Question locked 25 September 2026. Later notes change how it is run. They do not change the question.
 
 Tested by holding every farm's marginal forecast fixed and changing only how
 values are paired across farms, so that any change in portfolio skill is
@@ -36,9 +29,7 @@ answered by marginal scores.
 
 The predictive distribution of the **portfolio total**, meaning the sum over a
 fixed set of farms of a nonlinear function of each farm's local wind, and its
-expected CRPS. CRPS of a sum is sensitive to the dependence among the summands
-in a way that the average of per farm CRPS is not, which is precisely why the
-sum is the diagnostic.
+expected CRPS. CRPS of a sum depends on how the summands move together. The average of the per-farm CRPS does not. The sum is the score for that reason.
 
 The experiment measures **the effect of changing dependence, conditional on fixed
 farm level forecasts.** It does not decompose portfolio CRPS into a marginal part
@@ -48,7 +39,7 @@ to the coupling change, which is not the same as a unique additive decomposition
 of the score into marginal and dependence contributions, and no such decomposition
 is claimed.
 
-A consequence worth stating plainly. If a coupling improves portfolio CRPS, that
+If a coupling improves portfolio CRPS, that
 does not establish that it recovers the true dependence. A different coupling can
 compensate for imperfect marginals, so the improvement may reflect error
 cancellation rather than a better dependence estimate. The result is therefore
@@ -70,7 +61,7 @@ An earlier draft of this design claimed nobody had tested joint calibration
 through a downstream aggregate quantity. That was wrong, and the claim is
 withdrawn.
 
-Three distinctions survive, and the project rests only on these.
+Three differences are left, and the project stands on these.
 
 1. **GenCast's targets are idealised.** Power is derived from analysis 10 m wind
    times a standard curve times capacity. It never meets metered generation, so
@@ -754,15 +745,17 @@ Each extra step costs about 4.3 GB per member, and time is linear in steps. Two 
     curve per farm: ERA5 hourly 100 m wind interpolated to the farm and
     extrapolated to hub height, against Elexon metered output, uncurtailed
     periods only, fitted on dates before 2 July 2025 so no scored window is
-    touched. The fitted form is monotone and smooth, so it stays in the
-    differentiable path, and every arm uses the same curve. A farm with too
-    little uncurtailed history before that date keeps the idealised curve and
-    is listed. The curve absorbs ERA5's local wind biases as well as the farm's
-    real behaviour, so it is a mapping from ERA5-like wind to power, not a
-    turbine curve. On development dates, ERA5 wind through the fitted curve is
-    scored against metered output as the conversion floor, the error that
-    remains with perfect reanalysis weather. Turbine SCADA and commercial power
-    data are not used; that is a stated limitation.
+    touched. The hub-height step was dropped on 27 Oct. The fitted form is
+    monotone and smooth, so it stays in the differentiable path, and every arm
+    uses the same curve. A farm with too little uncurtailed history before that
+    date keeps the idealised curve and is listed. The curve absorbs ERA5's
+    local wind biases as well as the farm's real behaviour, so it is a mapping
+    from ERA5-like wind to power, not a turbine curve. On development dates,
+    ERA5 wind through the fitted curve is scored against metered output as the
+    conversion floor. Describing that as the error left by perfect reanalysis
+    weather was wrong: ERA5's error is in the number. Corrected on 27 Oct.
+    Turbine SCADA and commercial power data are not used; that is a stated
+    limitation.
   This does not move the locked question in section 1.
 - 26 Oct 2026, later the same day, before any initial state is built. AIFS ENS
   starts from perturbed ensemble states. ECMWF's implementation page says
@@ -810,3 +803,63 @@ Each extra step costs about 4.3 GB per member, and time is linear in steps. Two 
   substituted for it, and cites Li, Guan and Wu (2015) as prior art for power
   as an atmospheric observation. This does not move the locked question in
   section 1.
+- 26 Oct 2026, power curves fitted, before scoring. ERA5 hourly 100 m and 10 m
+  wind for each of the 17 farms, September 2020 to June 2026, from the
+  Copernicus time-series dataset. It returns the nearest 0.25 degree grid
+  point, not an interpolation. Each curve is the smooth logistic already used
+  on the training path, with cut-in, rated speed and sharpness fitted by least
+  squares to uncurtailed metered output before 2 July 2025. Every farm has
+  between 30,548 and 41,457 such hours, so none falls back to the idealised
+  curve. Hours above 20 m/s are scarce everywhere, and the onshore farms have
+  few hours above 16 m/s, so the top of those curves is weakly constrained.
+  On the development dates the median absolute error is 10.1 per cent of
+  capacity. Hornsea 1 is the outlier, at 24.0 per cent. Parameters, bin counts
+  and one figure per farm are in `results/power-curves/` on RDS. Superseded on
+  27 Oct 2026 by the bilinear refit below; these two percentages are the
+  nearest-point fit. This does not move the locked question in section 1.
+- 27 Oct 2026, power curves refit, before any score. Job 39311089. Corrects the
+  nearest-point fit and the floor wording above.
+  - *Input.* ERA5 100 m wind at the four corners of the surrounding 0.25 degree
+    cell, September 2020 through 30 June 2026, combined with bilinear weights.
+    That is what a linear interpolation does on this cell. No hub-height step.
+    In `gbwind.power` the same rule applies to a forecast: 100 m wind goes into
+    the curve as it is, and the one-seventh extrapolation from 10 m wind is only
+    there for a field that has no 100 m wind.
+  - *Rated speed and cut-out.* The fitted curve is a logistic, so it only
+    identifies a midpoint and a width. Cut-in and rated speed trade off. Left
+    alone, rated speed came out between 11.4 and 15.4 m/s, including at the
+    offshore farms, which are not short of hours above 16 m/s (Hornsea 1 has
+    2,464 fitting hours in the 16 to 20 m/s bin). That spread is the tradeoff,
+    not a measurement of the turbine. A Gaussian prior, mean 12.5 m/s and
+    standard deviation 2 m/s, weighted as 100 hours, holds every fitted rated
+    speed at 12.5 m/s. The unpenalised value is stored next to it. Cut-out is
+    not fitted and not applied. A hard zero would block the training gradient,
+    and hours at or above 25 m/s are scarce: 23 at Hornsea 1 and 4 at Whitelee
+    in the whole fit. The idealised reference curve still cuts out at 25 m/s.
+  - *Floor.* Development dates, 12 May 2026 through 30 June 2026. Median
+    absolute error 10.2 per cent of effective capacity. Whitelee is 6.0 per
+    cent; most farms sit between 8 and 13. This is the error with ERA5 100 m
+    wind as the input. It includes ERA5 being wrong.
+  - *Hornsea 1 stays.* Units T_HOWAO-1, T_HOWAO-2 and T_HOWAO-3, 400 MW each,
+    present in every settlement period from September 2020. Maximum metered
+    output 1198.5 MW. The 99.5th percentile before 12 May 2026 is 1197.7 MW.
+    Not a missing unit, and not a capacity error. Metered fraction 0.9995,
+    against the roster rule of 0.95, so the farm stays. On the development
+    dates the absolute error is 291 MW, 24.3 per cent of capacity, mean error
+    +231 MW, and 75 per cent of hours are over-predicted. 428 of the 1,165
+    admissible hours are 3 to 21 June 2026, when all three units meter about
+    zero and neither the acceptance flag nor the negative-price flag is set.
+    Those hours are about 70 per cent of the absolute error. The other 737
+    hours are 139 MW, 11.6 per cent of capacity. February to May 2024 is a
+    smaller version of the same gap: monthly maxima of 781 to 826 MW against a
+    farm that otherwise reaches about 1190, and the acceptance flag does not
+    mark it. Those hours stay in the fit. The farm is not removed for scoring
+    badly.
+  - *What the code loads.* `config/power_curves.json`, written 27 Oct 2026.
+    `capacity_mw` in `data/interim/portfolio.csv` is now the same 99.5th
+    percentile the curves were fit to. Registered capacity is still in
+    `registered_capacity_mw`. All 17 farms are selected. The live score task
+    has not written a power score, so there is no earlier number to mix with
+    this curve. The next image build copies the parameter file, and scores
+    from that deploy onward use it.
+  This does not move the locked question in section 1.

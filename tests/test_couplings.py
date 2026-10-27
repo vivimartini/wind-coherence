@@ -1,4 +1,4 @@
-"""Marginal invariance: the assertion the whole experiment rests on."""
+"""Per-farm CRPS is identical across couplings."""
 
 import numpy as np
 import pytest

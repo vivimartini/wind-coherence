@@ -1,12 +1,4 @@
-"""One AIFS ENS v2 step on one GPU.
-
-The question this measures is whether the operational ensemble, which is 0.25°
-and emits 100 m wind, can take a step on one 80 GB A100. WeatherNext Mini
-cannot answer that: it is 1° and its targets stop at 10 m wind.
-
-The step follows the released notebook for ecmwf/aifs-ens-2.0: one ensemble
-member, initialised from ECMWF open data, rolled one 6 hour step.
-"""
+"""One AIFS ENS v2 member, one 6 h step, from ECMWF open data. Records peak memory."""
 
 from __future__ import annotations
 
@@ -64,9 +56,8 @@ def main() -> int:
         fields, date = initial_state()
         record["init_source"] = SOURCE
         record["input_fields"] = sorted(fields)
-        from anemoi.inference.runners.simple import SimpleRunner
-
         from aifs_guards import check_static_fields, install_nan_guard
+        from anemoi.inference.runners.simple import SimpleRunner
 
         runner = SimpleRunner(str(ROOT / "data" / "aifs" / "aifs-ens-crps-2.0.ckpt"))
         static = check_static_fields(fields, runner.model)
@@ -125,9 +116,9 @@ def main() -> int:
 
 
 def initial_state():
-    import numpy as np
     import earthkit.data as ekd
     import earthkit.regrid as ekr
+    import numpy as np
     from ecmwf.opendata import Client as OpendataClient
 
     ekd.config.set("user-cache-directory", str(ROOT / "cache" / "earthkit"))

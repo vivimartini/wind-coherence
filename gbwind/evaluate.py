@@ -37,9 +37,17 @@ def power_ensemble(ds: xr.Dataset, portfolio: pd.DataFrame) -> xr.DataArray:
     ds = ds.sel(farm=portfolio["farm"].to_numpy())
     hub = xr.DataArray(portfolio["hub_height_m"].to_numpy(float), dims="farm")
     cap = xr.DataArray(portfolio["capacity_mw"].to_numpy(float), dims="farm")
+    curves = power.load_curves()
+    names = portfolio["farm"].astype(str)
+
+    def param(key):
+        values = [curves[name][key] if name in curves else np.nan for name in names]
+        return xr.DataArray(values, dims="farm")
+
     mw = xr.apply_ufunc(
         power.farm_power_mw,
-        ds["wind_u_100m"], ds["wind_v_100m"], ds["wind_u_10m"], ds["wind_v_10m"], hub, cap,
+        ds["wind_u_100m"], ds["wind_v_100m"], ds["wind_u_10m"], ds["wind_v_10m"],
+        hub, cap, param("cut_in_ms"), param("rated_ms"), param("sharpness"),
     )
     return mw.transpose("init_time", "lead_time", "member", "farm").astype("float64")
 

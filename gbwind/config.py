@@ -1,8 +1,4 @@
-"""Every fixed choice in DESIGN.md, in one place.
-
-Nothing here is tuned against results. Changing a value is an amendment and
-belongs in the DESIGN.md log with a date.
-"""
+"""Constants from DESIGN.md. A change is an amendment, dated in the log. Nothing here is tuned on a score."""
 
 from __future__ import annotations
 

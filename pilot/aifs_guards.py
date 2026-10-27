@@ -1,12 +1,6 @@
-"""Checks every AIFS ENS run must pass before its output is used.
+"""Fail an AIFS run on a non-finite input or raw output, and on a static field that is missing or zero-filled.
 
-Two failure modes are guarded. A NaN that survives the model's imputer, or
-appears in a raw prediction, poisons every later step and every gradient. And
-the five constant forcings (`lsm`, `sdor`, `slor`, `wmb`, `z`) are not read
-from the checkpoint: `SimpleRunner` warns "Coupled forcings are not supported"
-and takes them from the input state, so a missing or zero-filled field would
-run silently. They are compared against the checkpoint's own training
-statistics instead.
+`lsm`, `sdor`, `slor`, `wmb` and `z` come from the input state, not the checkpoint. They are checked against the checkpoint's training mean and spread.
 """
 
 from __future__ import annotations

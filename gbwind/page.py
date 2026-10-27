@@ -1,4 +1,4 @@
-"""The explorable results page (DESIGN.md section 8, deliverable 5).
+"""Results page, one HTML file (DESIGN.md section 8).
 
 One self contained HTML file with the data embedded. The default case is chosen
 by the rule fixed in the execution note: among cases whose native portfolio

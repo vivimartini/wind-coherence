@@ -1,9 +1,4 @@
-"""Idempotent object writes for the live archive.
-
-A second ingest of the same cycle replaces nothing and creates no duplicate.
-Local disk and S3 share the interface, so the Fargate task and a laptop run
-the same code. S3 writes land on a temporary key and are copied into place.
-"""
+"""Idempotent writes. Same bytes at the same key are a no-op. S3 lands on a temporary key, then moves into place."""
 
 from __future__ import annotations
 

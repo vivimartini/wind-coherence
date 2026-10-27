@@ -1,84 +1,36 @@
-# gb-wind-physics
+# wind-coherence
 
-## Can weather forecasts correctly predict when wind farms will produce little electricity at the same time?
+Does an operational ensemble get the joint behaviour of a GB wind portfolio right, or only the forecast at each farm?
 
-This project tests AI and physics based weather ensembles against metered
-generation from a portfolio of GB wind farms. It keeps each farm's forecast
-unchanged and alters only how scenarios are paired across farms, measuring the
-effect on uncertainty in their combined output.
+Each farm keeps its 51 forecast values. Only the pairing across farms changes. Portfolio CRPS moves when that pairing was wrong. Two farms that each do 0 or 100 MW half the time look the same farm by farm, whether they fail together (the total is 0 or 200) or offset (the total is always 100).
 
-**Status.** The evaluation machinery is built. One WeatherNext Mini gradient step
-has been measured on one 80 GB A100, on the official weather loss: two ensemble
-members fit, four do not, and a 24 h or 42 h rollout fits only with
-rematerialisation ([docs/m1_feasibility.md](docs/m1_feasibility.md)). That step
-does not yet go through the power calculation. The live archive and the CDK
-stack are in the repo (`gbwind/live.py`, `infra/`). Nothing is deployed: this
-account has no AWS credentials, and no held-out forecast result exists yet.
+## Status, 27 Oct 2026
 
-## Why it matters
+Seventeen farms, metered from September 2020, all still selected. Curves are in `config/power_curves.json`: ERA5 100 m wind, bilinear from the four surrounding 0.25° points, fit on uncurtailed hours before 2 July 2025. On the development dates the median absolute error is 10.2% of capacity. Hornsea 1 is 24%. Most of that is 3–21 June 2026, when the farm metered about zero and the curtailment flag missed it. It stays in.
 
-A geographically spread portfolio is valuable because its farms need not all
-produce badly at once. A forecast can describe the uncertainty at each farm
-correctly and still get the uncertainty of their combined output wrong, because
-what matters for the portfolio is whether low output happens together.
+AIFS ENS v2, one member per GPU. A 42 h step fits on one 80 GB A100 (55.5 GB, 26 s/step). The two-GPU step has not been timed. No development score and no sealed score. The live stack is in `infra/` and has not been deployed from this machine.
 
-Take two farms, each with a 50 per cent chance of producing 0 MW and a 50 per cent
-chance of producing 100 MW.
+Hypothesis, rules, and the dated change log: [DESIGN.md](DESIGN.md). WeatherNext Mini memory: [docs/m1_feasibility.md](docs/m1_feasibility.md).
 
-- If they always move together, the total is either 0 or 200 MW.
-- If they always offset, the total is always 100 MW.
+## Experiment
 
-Each farm has exactly the same individual forecast in both cases, and the expected
-total is the same. The chance of the portfolio producing nothing is completely
-different. Per site accuracy cannot distinguish these, and it is the distinction
-that matters for anyone holding the portfolio.
+00 UTC run, leads 24 to 47 hours. One system, one portfolio.
 
-Ensembles trained on marginal scoring rules have their per location uncertainty
-constrained by the loss and their cross location dependence left emergent. Whether
-that emergent dependence is right for a real portfolio is an open, application
-specific question, and the evidence is mixed. The WeatherNext 3 authors report
-that their architecture produces largely realistic joint structure despite the
-marginal objective, while a preprint on coastal sea level finds a model with
-positive skill at every individual station whose joint spatial structure is worse
-than climatological draws.
-
-## The experiment
-
-One forecast system at a time. One portfolio. The 00 UTC run at lead times 24 to
-47 hours, the window a day ahead position is taken on. Every farm keeps exactly
-the same 51 forecast values. Only the pairing across farms changes.
-
-| Coupling | Dependence source |
+| Coupling | Pairing |
 | --- | --- |
-| Native | The ensemble as shipped |
-| Historical | Schaake shuffle against simultaneously observed metered output |
-| Independent | Each farm shuffled separately, as an independence reference |
+| Native | Ensemble as issued |
+| Historical | Schaake shuffle against metered output at the same time of day |
+| Independent | Each farm shuffled on its own |
 
-Per farm CRPS is then identical across couplings, which a unit test asserts and
-which voids the run if it fails. What the comparison measures is the effect of
-changing dependence, conditional on fixed farm level forecasts.
+Per-farm CRPS has to match across couplings. `tests/test_couplings.py` checks it, and a mismatch voids the run.
 
-Two systems. [IFS ENS](https://dynamical.org/catalog/models/ecmwf-ifs-ens/) as the
-physics reference and [AIFS ENS](https://dynamical.org/catalog/ecmwf-aifs-ens-forecast/)
-as the ML arm. Primary outcome is portfolio CRPS, with interval coverage and the
-[variogram score](https://journals.ametsoc.org/abstract/journals/mwre/143/4/mwr-d-14-00269.1.xml)
-as complementary dependence sensitive diagnostics.
+[IFS ENS](https://dynamical.org/catalog/models/ecmwf-ifs-ens/) is the reference. [AIFS ENS](https://dynamical.org/catalog/ecmwf-aifs-ens-forecast/) is the model under test. The score is portfolio CRPS, with interval coverage and the [variogram score](https://journals.ametsoc.org/abstract/journals/mwre/143/4/mwr-d-14-00269.1.xml) alongside it.
 
 ## Data
 
-All free. AIFS ENS and IFS ENS as Icechunk Zarr archives on the AWS Open Data
-Registry via dynamical.org, 51 members at 0.25 degrees, opened directly with
-Xarray, AIFS ENS covering 2 July 2025 onward. Elexon B1610 for per farm metered
-output, with physical notifications and accepted instructions for curtailment
-flagging. DESNZ Renewable Energy Planning Database for turbine metadata.
+IFS ENS and AIFS ENS from the dynamical.org Icechunk archives, 51 members at 0.25°. AIFS ENS starts 2 July 2025. Metered output is Elexon B1610. Curtailment uses physical notifications and accepted instructions. Turbine metadata is the DESNZ Renewable Energy Planning Database.
 
-Nothing is trained on the forecast archive. The dependence template comes from
-years of metered output, the marginals are the ensemble's own, and the archive is
-used for evaluation only.
-
-Checked on first open: 100 m wind is present in both archives, so every arm uses
-100 m wind. The lead steps shared by both systems inside the window are 24, 30,
-36 and 42 hours. Both are recorded as an execution note in DESIGN.md.
+The forecast archive is for scoring. The dependence template is built from metered history. Training initial states come from ECMWF open data. ERA5 is only for the power curves. Where 100 m wind exists it goes straight into the curve. Shared leads in the 24–47 h window are 24, 30, 36 and 42 h.
 
 ## Progress
 
@@ -88,14 +40,12 @@ Checked on first open: 100 m wind is present in both archives, so every arm uses
 - [x] Ensemble archive loader, members at farm locations
 - [x] Power conversion and the three couplings, plus cross model
 - [x] Marginal invariance test passing
-- [ ] Full metered history downloaded and template feasibility reported
+- [x] Metered history, September 2020 onward, and per-farm power curves
+- [ ] Template feasibility on the development dates
 - [ ] Development period result
 - [ ] Sealed period, opened once
 
-The machinery is checked end to end on a synthetic world with a planted answer
-(`python -m gbwind demo`). There, an ensemble whose cross farm dependence is too
-weak is caught by the historical coupling, and a correctly coupled one shows no
-spurious gain. That is a check on the method, not a result about real forecasts.
+`python -m gbwind demo` runs the same path on a synthetic world with a planted answer. Weak cross-farm dependence gets caught. A correctly coupled ensemble shows no gain. That checks the code. It is not a result about real forecasts.
 
 ## Run
 
@@ -139,55 +89,27 @@ marginal invariance tests (`tests/test_couplings.py`) run in CI on every push.
 
 | Path | What |
 | --- | --- |
-| `gbwind/config.py` | Every fixed design choice, in one place |
+| `gbwind/config.py` | Constants. A change here is an amendment |
 | `gbwind/elexon.py`, `curtailment.py`, `portfolio.py` | Metered output, flags, portfolio |
 | `gbwind/archive.py` | dynamical.org archives, members at farm locations |
-| `gbwind/power.py` | Hub height extrapolation and the idealised power curve |
+| `gbwind/power.py` | 100 m wind to power. Fitted curves in `config/power_curves.json` |
 | `gbwind/couplings.py` | Native, historical, independent, cross model |
 | `gbwind/template.py` | Pool admissibility, publication lag, widening, draws |
 | `gbwind/scores.py`, `bootstrap.py` | CRPS, energy and variogram scores, block bootstrap |
 | `gbwind/evaluate.py`, `pipeline.py` | Per case scoring, invariance check, summaries |
 | `gbwind/seal.py` | The sealed test period, opened once |
-| `gbwind/figures.py`, `page.py` | The three figures and the explorable results page |
+| `gbwind/figures.py`, `page.py` | Three figures and one HTML page |
 | `config/portfolio.yaml` | Candidate farms and BM units |
 | `data/forecasts/` | Saved member forecasts at farm locations |
 | `results/<period>/<system>/` | Scores, saved couplings and template timestamps, summaries |
 
-## Design and prior art
+## Prior work
 
-The full specification, the preregistered hypothesis, the template construction
-rules, what is deliberately not claimed, and an amendment log recording where the
-design changed and why, are in [DESIGN.md](./DESIGN.md).
+The hypothesis, the template rules, and a dated log of what changed are in [DESIGN.md](./DESIGN.md).
 
-Aggregate wind power evaluation of ML ensembles is not new.
-[GenCast](https://arxiv.org/abs/2312.15796) converts wind to power through a
-nonlinear curve, pools across farm groupings at 120, 240 and 480 km, and evaluates
-aggregate CRPS in a section on joint distribution skill, using idealised power
-from analysis wind. Fine-tuning a weather foundation model on energy assets is
-not new either: Silurian with Hydro-Québec does it per site for hub-height wind
-and icing, and Aardvark fine-tunes on station wind or temperature with a
-deterministic loss. Restoring cross location dependence with copulas in
-[day ahead electricity scenario generation](https://arxiv.org/abs/2409.07637) is
-established practice, and
-[probabilistic wind power forecasting on offshore farm data](https://arxiv.org/abs/2602.13010)
-is an active area. To my knowledge the open question is narrower: whether
-training on a portfolio power CRPS changes how a probabilistic weather model
-couples farms, separated from a gain that is only better marginals. Aurora 1.5
-is a probabilistic ensemble as of July 2026 and is related work, not the model
-this live system measures.
+[GenCast](https://arxiv.org/abs/2312.15796) already scores aggregate wind power, from analysis wind through an idealised curve, so it never sees metering or curtailment. Silurian (with Hydro-Québec) and Aardvark fine-tune weather models per site. This run asks whether a portfolio loss changes the coupling, separate from a gain that is only better marginals. Aurora 1.5 is a probabilistic ensemble. The system measured here is AIFS ENS.
 
-The shuffle based approach is borrowed from a preprint on
-[coastal sea level](https://arxiv.org/abs/2608.08954). The
-[functional generative network](https://arxiv.org/abs/2506.10772) paper reports
-largely realistic joint structure despite marginal training, which is the strongest
-evidence against the hypothesis here and is treated as such in DESIGN.md. Further
-context in [WeatherNext 3](https://arxiv.org/abs/2609.03582),
-[AIFS-CRPS](https://arxiv.org/abs/2412.15832) and
-[ensemble copula coupling](https://arxiv.org/abs/1302.7149).
-
-The first experiment runs on IFS ENS and AIFS ENS, so its findings concern those
-systems. WeatherNext 3 supplies motivation and becomes a third arm only as an
-extension.
+The shuffle comes from a preprint on [coastal sea level](https://arxiv.org/abs/2608.08954). The [functional generative network](https://arxiv.org/abs/2506.10772) paper finds largely realistic joint structure from marginal training. That is the result most in tension with the hypothesis, and DESIGN.md treats it that way. Also [WeatherNext 3](https://arxiv.org/abs/2609.03582), [AIFS-CRPS](https://arxiv.org/abs/2412.15832) and [ensemble copula coupling](https://arxiv.org/abs/1302.7149). WeatherNext 3 is a possible later arm.
 
 ## Licence
 
